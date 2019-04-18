@@ -169,11 +169,6 @@ module receiver
 	logic [31:0] time_count;
 	
 	enum logic [3:0] { INIT, SEND_ACK, SEND_NAK, SEND_READY, WAIT, R0} state, next_state;
-	
-	//TODO: fix this
-	function logic checkCRC8(input logic [N_PKT-1:0] data);
-    	return  (data[7:0] == 8'h0)? 1'b0 : 1'b1;  
-  	endfunction
 
 	always_comb begin : proc_nextStateGen
 		
@@ -227,7 +222,7 @@ module receiver
 				
 				else if(avail_DEC && data_DEC[N_PKT-1:N_PKT-1-7]==8'h3c) begin
 					clear_time_count = 1'b1;
-					if(checkCRC8(data_DEC)) begin
+					if(check_crc8(data_DEC[39:8], data_DEC[7:0])) begin
 						next_state = SEND_ACK;
 						read_DEC = 1'b1;
 					end

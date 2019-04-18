@@ -219,6 +219,11 @@ module multi_packet_test;
 		// assert()
 	endtask: transfer_one_packet_bad_crc	
 
+
+	initial begin
+		$monitor("err_code=%b",err_code_rx);
+	end
+
 	initial begin
 		
 
@@ -231,13 +236,14 @@ module multi_packet_test;
 		@(posedge clk);
 		
 
-		// transfer_one_packet(32'h12345678, 8'hff);		
-		// #100;
+
+		transfer_one_packet(32'h12345678, crc8(32'h12345678));		
+		#100;
 		
-		// transfer_one_packet(32'h0feedbac, 8'h12);	
-		// #100;
+		transfer_one_packet(32'h0feedbac, crc8(32'h0feedbac));	
+		#100;
 		
-		transfer_one_packet_bad_crc(32'h0feedbac, 8'h12);
+		transfer_one_packet_bad_crc(32'h0feedbac, crc8(32'h0feedbac));
 		#100;
 		
 		$finish;
