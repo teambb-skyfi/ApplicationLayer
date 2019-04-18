@@ -9,6 +9,13 @@
 // DATAPACKET  48'h3c_data_data_crc8(data)
 
 //8 bits of PID + 32 bits of data + 8 bits of CRC8
+
+//errcodes are 
+//2'b00 -> success
+//2'b01 -> 	UNDEFINED
+//2'b10 -> failure
+//2'b11 -> default
+
 module transmitter
 #(parameter N_PKT = 48)
 (
@@ -163,8 +170,9 @@ module receiver
 	
 	enum logic [3:0] { INIT, SEND_ACK, SEND_NAK, SEND_READY, WAIT, R0} state, next_state;
 	
+	//TODO: fix this
 	function logic checkCRC8(input logic [N_PKT-1:0] data);
-    	return  1'b1;  
+    	return  (data[7:0] == 8'h0)? 1'b0 : 1'b1;  
   	endfunction
 
 	always_comb begin : proc_nextStateGen
@@ -221,6 +229,7 @@ module receiver
 					clear_time_count = 1'b1;
 					if(checkCRC8(data_DEC)) begin
 						next_state = SEND_ACK;
+						read_DEC = 1'b1;
 					end
 					else begin
 						next_state = SEND_NAK;
