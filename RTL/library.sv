@@ -87,7 +87,7 @@ module ShiftInRegister
 endmodule : ShiftInRegister
 
 // // the width must be 32 bits!!!!!
-// crc8-dvbs2 polynomial 0xd5
+// crc8-dvbs2 polynomial 0xd5, initial value 0x00
 function logic [7:0] crc8 (input logic [31:0] data);
 	static logic  [0:255][7:0] crc8xtable = 
 	{	8'h00, 8'hD5, 8'h7F, 8'hAA, 8'hFE, 8'h2B, 8'h81, 8'h54, 8'h29, 8'hFC, 8'h56, 8'h83, 8'hD7, 8'h02, 8'hA8, 8'h7D, 
