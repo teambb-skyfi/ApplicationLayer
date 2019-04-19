@@ -89,8 +89,7 @@ endmodule : ShiftInRegister
 // // the width must be 32 bits!!!!!
 // crc8-dvbs2 polynomial 0xd5
 function logic [7:0] crc8 (input logic [31:0] data);
-
-	logic  [0:255][7:0] crc8xtable = 
+	static logic  [0:255][7:0] crc8xtable = 
 	{	8'h00, 8'hD5, 8'h7F, 8'hAA, 8'hFE, 8'h2B, 8'h81, 8'h54, 8'h29, 8'hFC, 8'h56, 8'h83, 8'hD7, 8'h02, 8'hA8, 8'h7D, 
 		8'h52, 8'h87, 8'h2D, 8'hF8, 8'hAC, 8'h79, 8'hD3, 8'h06, 8'h7B, 8'hAE, 8'h04, 8'hD1, 8'h85, 8'h50, 8'hFA, 8'h2F, 
 		8'hA4, 8'h71, 8'hDB, 8'h0E, 8'h5A, 8'h8F, 8'h25, 8'hF0, 8'h8D, 8'h58, 8'hF2, 8'h27, 8'h73, 8'hA6, 8'h0C, 8'hD9, 
@@ -124,12 +123,56 @@ function logic [7:0] crc8 (input logic [31:0] data);
 	 data_byte = data[7:0] ^ crc;
 	 crc = crc8xtable[data_byte] ^ 8'h0;
 	 return crc;
-
 endfunction: crc8
 
 function logic check_crc8(input logic [31:0] data, input logic [7:0] crc);
 	return (crc8(data)==crc);
 endfunction: check_crc8
+
+// 32-bit LFSR with 
+// feedback polynomial X31 + X28 + 1 
+module LFSR_32 
+	(input logic clk, rst_n, enable, 
+	output logic [31:0] data);
+
+	logic newBit;      //31          //28           //1
+	assign newBit = ((data>>1) ^ (data>>4) ) & 1'b1;
+	always_ff @(posedge clk or negedge rst_n) begin : proc_
+	  	if(~rst_n) begin
+	  		data <= 32'h8012_3457;
+	  	end else begin
+	  		if(enable) 
+	  			data <= {newBit, data[31:1]};
+	  	end
+  	end
+endmodule: LFSR_32
+
+module lfsr_test;
+	logic clk, rst_n, enable;
+	logic [31:0] data;
+
+	LFSR_32 l0(.*);
+	
+	initial begin
+	    clk = 1'b1;
+	    forever #5 clk = ~clk;
+  	end
+
+  	assign enable = 1'b1;
+  	// assign rst_n = 1'b1;
+  	
+  	initial begin
+  		$monitor("data = %x", data);
+  	end
+  	initial begin
+  		rst_n = 1'b0;
+  		#3;
+  		rst_n=1'b1;
+  		#1000;
+  		$finish;;
+  	end
+
+endmodule: lfsr_test
 
 //---- HextoSevenSegment
 module HextoSevenSegment
