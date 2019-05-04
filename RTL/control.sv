@@ -2,9 +2,9 @@
 
 // crc11(2d2d) = 0x66
 `define TIMEOUT_TICKS 32'h00ff_ffff
-`define READY_PACKET 48'h1f_1f1f_1f1f_99
-`define ACK_PACKET 48'h2d_2d2d_2d2d_66
-`define NAK_PACKET 48'ha5_a5a5_a5a5_12
+`define READY_PACKET 8'h1f
+`define ACK_PACKET 8'h2d
+`define NAK_PACKET 8'ha5
 `define ERRORS_ALLOWED 8
 // DATAPACKET  48'h3c_data_data_crc8(data)
 
@@ -126,9 +126,10 @@ module transmitter
     	end
 	end
 
-    assign ready_recv = (data_DEC == `READY_PACKET)&& avail_DEC;
-    assign ack_recv = (data_DEC == `ACK_PACKET) && avail_DEC;
-	assign nak_recv = (data_DEC == `NAK_PACKET) && avail_DEC;
+	//TODO fix this
+    assign ready_recv = (data_DEC==`READY_PACKET) && avail_DEC;
+    assign ack_recv = (data_DEC==`ACK_PACKET)  && avail_DEC;
+	assign nak_recv = (data_DEC==`NAK_PACKET) && avail_DEC;
 
 	Counter #(.WIDTH(32)) Err_Counter (.load(clear_err_count), .D(0), .up(incr_err_count), .Q(err_count), .*);
 	Counter #(.WIDTH(32)) Time_Counter (.load(clear_time_count), .D(0), .up(incr_time_count), .Q(time_count), .*);
@@ -220,9 +221,10 @@ module receiver
 					clear_time_count = 1'b1;
 				end
 				
-				else if(avail_DEC && data_DEC[N_PKT-1:N_PKT-1-7]==8'h3c) begin
+				else if(avail_DEC) begin
 					clear_time_count = 1'b1;
-					if(check_crc8(data_DEC[39:8], data_DEC[7:0])) begin
+					//if(check_crc8(data_DEC[39:8], data_DEC[7:0])) begin
+					if(1'b1) begin //replace with crc check
 						next_state = SEND_ACK;
 						read_DEC = 1'b1;
 					end

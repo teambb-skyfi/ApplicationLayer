@@ -7,7 +7,7 @@ module ChipInterface_tx(
 	output logic [35:0] GPIO_0,
 	input  logic [35:0] GPIO_1,
 	output logic [ 9:0] LEDR,
-	output logic [ 6:0] HEX5, HEX4, HEX1, HEX0);
+	output logic [ 6:0] HEX5, HEX4,HEX3, HEX2, HEX1, HEX0);
 
 	logic rst_n;
  	assign rst_n = KEY[0];
@@ -15,13 +15,13 @@ module ChipInterface_tx(
 	logic clk;
 	assign clk = CLOCK_50;
 
-	localparam PULSE_CT = 7500;
-	localparam N_MOD = 2;
-	localparam L = 15000;
+  	localparam PULSE_CT = 7500;
+  	localparam N_MOD = 2;
+  	localparam L = 15000;
+  	localparam PRE_CT = 2;
 	localparam N_PKT = 8;
-	localparam PRE_CT = 4;
-	localparam DELTA = 4000; //TODO Could be reduced; likely not issue anyway
-
+	localparam DELTA = 4000;
+	
 	logic [N_PKT-1:0] data2send;
 	
 	logic start_tx, avail_tx;
@@ -61,8 +61,32 @@ module ChipInterface_tx(
 	logic [31:0] data_expected_tx;
 	LFSR_32 data_gen_tx (.clk, .rst_n, .enable(en_lfsr_tx), .data(data_expected_tx));
 
-	assign en_lfsr_tx = 1'b0; //TODO: update this to send "real" data
+	// assign en_lfsr_tx = 1'b0; //TODO: update this to send "real" data
+	assign en_lfsr_tx = ~KEY[2];
+	assign data2send = data_expected_tx[7:0];
+	
+	logic [7:0] data_received;
+	logic [7:0] data_received_DEC;	
 
+	always_ff @(posedge clk, negedge rst_n) begin
+		if (~rst_n)
+			data_received_DEC <= 8'hff;
+		else if(avail_DEC_tx)
+			data_received_DEC <= data_DEC_tx;
+	end
+
+	always_comb begin : proc_display
+		case({SW[2],SW[1],SW[0]})
+			3'b000: data_received = data_received_DEC; //data_DEX_tx
+			3'b001: data_received = data_expected_tx[7:0]; //value from lfsr 
+			default: data_received = 8'hff;
+			// 3'b010: data_received =/
+		endcase
+	end
+		
+	
+	HextoSevenSegment h0 (data_received[3:0],HEX0);
+	HextoSevenSegment h1 (data_received[7:4],HEX1);
 endmodule: ChipInterface_tx
 
 
