@@ -129,23 +129,91 @@ function logic check_crc8(input logic [31:0] data, input logic [7:0] crc);
 	return (crc8(data)==crc);
 endfunction: check_crc8
 
-// 32-bit LFSR with 
-// feedback polynomial X31 + X28 + 1 
-module LFSR_32 
-	(input logic clk, rst_n, enable, 
-	output logic [31:0] data);
 
-	logic newBit;      //31          //28           //1
-	assign newBit = ((data>>1) ^ (data>>4) ) & 1'b1;
-	always_ff @(posedge clk or negedge rst_n) begin : proc_
+
+module twoCycleEnable(input logic clk, rst_n, en,
+	output logic twoCycle);
+	
+	enum {IDLE, S0} s, ns;
+
+	always_ff @(posedge clk, negedge rst_n) begin
+	if (~rst_n)
+		s <= IDLE;
+	else
+		s <= ns;
+	end
+
+	always_comb begin
+		twoCycle = 1'b0;
+		case (s)
+			IDLE: begin
+				ns = IDLE;
+				if(en) begin
+					ns = S0;
+					twoCycle = 1'b1;
+				end
+			
+			end
+			S0 : begin
+				ns = IDLE;
+				twoCycle = 1'b1;
+			end
+
+		endcase
+	
+	end
+
+
+
+endmodule: twoCycleEnable
+
+
+module LFSR_next
+#(parameter SEED = 32'h8012_3457, WIDTH=32) 
+	(input logic clk, rst_n, enable, 
+	output logic [WIDTH-1:0] data1, data2);
+
+	logic [31:0] tempData, tempData2;
+	logic newBit, newBit2;      //31          //28           //1
+	assign newBit = ((tempData>>1) ^ (tempData>>4) ) & 1'b1;
+
+	always_ff @(posedge clk or negedge rst_n) begin
 	  	if(~rst_n) begin
-	  		data <= 32'h8012_3457;
+	  		tempData <= SEED;
 	  	end else begin
 	  		if(enable) 
-	  			data <= {newBit, data[31:1]};
+	  			tempData <= {newBit, tempData[31:1]};
 	  	end
   	end
-endmodule: LFSR_32
+  	assign data1 = tempData[WIDTH-1:0];
+
+  	always_comb begin
+  		tempData2 = {newBit, tempData[31:1]};
+  		data2 = tempData2[WIDTH-1:0];
+  	end
+  	
+endmodule: LFSR_next
+// 32-bit LFSR with 
+// feedback polynomial X31 + X28 + 1 
+module LFSR
+	#(parameter SEED = 32'h8012_3457, WIDTH=32) 
+	(input logic clk, rst_n, enable, 
+	output logic [WIDTH-1:0] data);
+
+	logic [31:0] tempData;
+	logic newBit;      //31          //28           //1
+	assign newBit = ((tempData>>1) ^ (tempData>>4) ) & 1'b1;
+	always_ff @(posedge clk or negedge rst_n) begin
+	  	if(~rst_n) begin
+	  		tempData <= SEED;
+	  	end else begin
+	  		if(enable) 
+	  			tempData <= {newBit, tempData[31:1]};
+	  	end
+  	end
+  	assign data = tempData[WIDTH-1:0];
+
+endmodule: LFSR
 
 module lfsr_test;
 	logic clk, rst_n, enable;
