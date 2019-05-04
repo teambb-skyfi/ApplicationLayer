@@ -12,7 +12,7 @@ THREADS = $(shell echo $$((2 * $(CORES))))
 
 # VCS flags
 VCSFLAGS = -full64 -sverilog -debug_all +lint=all +warn=all -j$(THREADS) +v2k
-COMMON_FLAGS += -top multi_node_random_test
+COMMON_FLAGS += -top tennis_test_one_packet
 
 # Simulator
 SIM = vcs
